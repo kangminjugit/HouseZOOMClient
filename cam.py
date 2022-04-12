@@ -3,6 +3,8 @@ import cv2
 import pyvirtualcam
 from pyvirtualcam import PixelFormat
 import numpy as np
+from PIL import Image
+from add_badge import Badge
 
 def run_camera():
     # haarcascade 불러오기
@@ -36,6 +38,10 @@ def run_camera():
 
     fps_out = 20
 
+
+    # 뱃지 틀 만들기
+    badge = Badge()
+
     with pyvirtualcam.Camera(width, height, fps_out, fmt=PixelFormat.BGR, print_fps=args.fps) as cam:
         print(f'Virtual cam started: {cam.device} ({cam.width}x{cam.height} @ {cam.fps}fps)')
 
@@ -60,6 +66,8 @@ def run_camera():
                 cv2.rectangle(frame, (x,y), (x+w, y+h), (255,255,255), 2)
                 roi_gray = gray[y:y+h, x:x+w]
                 roi_color = frame[y:y+h, x:x+w]
+
+            frame = badge.add_badge(frame)
 
             # Send to virtual cam.
             cam.send(frame)
