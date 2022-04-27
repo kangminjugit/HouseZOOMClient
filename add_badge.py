@@ -1,11 +1,11 @@
 import cv2
 
-
 # 뱃지 클래스
 class Badge:
     def __init__(self):
-        medal = cv2.imread('medal.png')
+        medal = cv2.imread('HouseZOOMClient\medal.png')
         self.medal = cv2.cvtColor(medal, cv2.COLOR_BGRA2BGR)
+        self.medal = cv2.flip(self.medal,1)
         h, w, c = medal.shape
         self.h = h
         self.w = w
