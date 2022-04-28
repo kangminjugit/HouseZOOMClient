@@ -69,6 +69,9 @@ def run_camera():
             
             #뱃지 그리기
             frame = badge.add_badge(frame)
+            
+            #이미지 좌우반전
+            frame = cv2.flip(frame, 1)
 
             # Send to virtual cam
             cam.send(frame)
@@ -82,35 +85,35 @@ def run_camera():
             
     vc.release()
     
-def detect(face_cascade,eye_cascade,gray,frame):
-     
+def detect(face_cascade,eye_cascade,gray,frame):         
+    
     # 등록한 Cascade classifier 를 이용하여 얼굴 찾기
     faces = face_cascade.detectMultiScale(
         gray, 
         scaleFactor=1.2, 
-        minNeighbors=3, 
+        minNeighbors=10, 
         minSize=(20, 20),
         flags=cv2.CASCADE_SCALE_IMAGE
     )
- 
+    
     # 얼굴에 사각형을 그리고 눈 찾기
     for (x, y, w, h) in faces:
         # 얼굴: 이미지 프레임에 (x,y)에서 시작하여, (x+넓이, y+길이)까지의 사각형을 그림 (색 255 255 255 , 굵기 2)
         cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 255, 255), 2)
- 
+        
         # 이미지를 얼굴 크기 만큼 잘라서 그레이스케일이미지(face_gray)와 컬러이미지(face_color)를 만듦
         face_gray = gray[y:y + h, x:x + w]
         face_color = frame[y:y + h, x:x + w]
- 
+        
         # 등록한 Cascade classifier 를 이용 눈을 찾음 (얼굴 영역에서만)
         eyes = eye_cascade.detectMultiScale(
             face_gray, 
             1.1, 
             5
         )
- 
+        
         # 눈: 이미지 프레임에 (ex,ey)에서 시작하여, (ex+넓이, ey+길이)까지의 사각형을 그림 (색 50 50 50 , 굵기 2)
-        for (ex, ey, ew, eh) in eyes:
-            cv2.rectangle(face_color, (ex, ey), (ex + ew, ey + eh), (50, 50, 50), 2)
-    
+        #for (ex, ey, ew, eh) in eyes:
+            #cv2.rectangle(face_color, (ex, ey), (ex + ew, ey + eh), (50, 50, 50), 2)
+        
     return frame        
