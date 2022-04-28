@@ -6,6 +6,7 @@ import numpy as np
 import keyboard
 from PIL import Image
 from add_badge import Badge
+from add_char import Character
 from gesture_Analyze import gesture_analyzer
 
 def run_camera():
@@ -45,6 +46,7 @@ def run_camera():
 
     # 뱃지 틀 만들기
     badge = Badge()
+    avatar = Character()
 
     with pyvirtualcam.Camera(width, height, fps_out, fmt=PixelFormat.BGR, print_fps=args.fps) as cam:
         print(f'Virtual cam started: {cam.device} ({cam.width}x{cam.height} @ {cam.fps}fps)')
@@ -69,6 +71,8 @@ def run_camera():
             
             #뱃지 그리기
             frame = badge.add_badge(frame)
+            
+            frame = avatar.add_char(frame)
             
             #이미지 좌우반전
             frame = cv2.flip(frame, 1)
