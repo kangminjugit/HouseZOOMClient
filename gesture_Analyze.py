@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import numpy as np
+from add_image import Heart 
 
 class gesture_analyzer:
     def __init__(self):
@@ -12,6 +13,8 @@ class gesture_analyzer:
         } # 9가지 제스처, 제스처 데이터는 손가락 관절의 각도와 각각의 라벨을 뜻함.
         
         self.rps_gesture = {0:'rock', 2:'scissors', 5:'paper'} # 가위바위보
+        
+        self.heart = Heart()
 
         # MediaPipe hands model
         self.mp_hands = mp.solutions.hands
@@ -68,13 +71,17 @@ class gesture_analyzer:
                     #cv2.putText(img, text=self.rps_gesture[idx].upper(), org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
 
                 # 숫자, 좋아요, 싫어요, 손하트, OK
-                cv2.putText(img, text=self.gesture[idx].upper(), org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
-
-                self.mp_drawing.draw_landmarks(img, res, self.mp_hands.HAND_CONNECTIONS) # 이거 지우면 손마디 랜드마크 표시 안함
+                cv2.putText(img, text=self.gesture[idx].upper(), org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)        
                 
-                img = cv2.flip(img, 1)
-        else:
-            img = cv2.flip(img, 1) 
+                #self.mp_drawing.draw_landmarks(img, res, self.mp_hands.HAND_CONNECTIONS) # 손마디 랜드마크 표시
                 
+                if idx == 8:
+                    img = cv2.flip(img, 1)
+                    img = self.heart.add_heart(img) 
+                    img = cv2.flip(img, 1)
+        #else:
+            #img = cv2.flip(img, 1) 
+        
+        img = cv2.flip(img, 1)         
         return(img)
             
