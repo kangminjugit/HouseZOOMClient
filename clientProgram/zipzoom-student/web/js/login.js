@@ -3,6 +3,7 @@ async function login(id, password){
 	localStorage.setItem('studentId',JSON.stringify(id));
 	localStorage.setItem('accessToken',JSON.stringify(response['data']['accessToken']));
 	localStorage.setItem('classId',JSON.stringify(response['data']['classId']));
+	
 	window.location.href = "main.html";
 }
 

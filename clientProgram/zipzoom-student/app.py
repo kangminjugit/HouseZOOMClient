@@ -21,14 +21,12 @@ def get_timeTable(classId):
     response = requests.get(
         'http://3.35.141.211:3000/api/time-table?classId=%d' % classId)
     response = response.json()
-    print(response)
     return response
 
 
 @eel.expose
-def startClass(studentId, classId):
-    classHandler = ClassHandle(studentId, classId)
-
+def startClass(studentId, classId, accessToken):
+    classHandler = ClassHandle(studentId, classId, accessToken)
 
 
 eel.start('index.html')

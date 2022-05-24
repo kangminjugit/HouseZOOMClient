@@ -3,7 +3,7 @@ import cv2
 # 뱃지 클래스
 class Avatar:
     def __init__(self):
-        avatar = cv2.imread('avatar_body.png')
+        avatar = cv2.imread('Image/avatar_body.png')
         self.avatar = cv2.cvtColor(avatar, cv2.COLOR_BGRA2BGR)
         self.avatar = cv2.flip(self.avatar,1)
         h, w, c = avatar.shape
