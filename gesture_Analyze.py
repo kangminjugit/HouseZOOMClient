@@ -66,10 +66,6 @@ class gesture_analyzer:
                 ret, results, neighbours, dist = self.knn.findNearest(data, 3)
                 idx = int(results[0][0])
 
-                # Draw gesture result 가위바위보
-                #if idx in rps_gesture.keys():
-                    #cv2.putText(img, text=self.rps_gesture[idx].upper(), org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
-
                 # 숫자, 좋아요, 싫어요, 손하트, OK
                 cv2.putText(img, text=self.gesture[idx].upper(), org=(int(res.landmark[0].x * img.shape[1]), int(res.landmark[0].y * img.shape[0] + 20)), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)        
                 
