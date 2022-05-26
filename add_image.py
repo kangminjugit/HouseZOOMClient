@@ -38,7 +38,7 @@ class Bomb:
         self.w = w
         self.c = c
 
-    # 기존 프레임에 뱃지를 붙이는 함수
+    # 기존 프레임에 폭탄를 붙이는 함수
     def add_bomb(self, frame):
         background_height, background_width, _ = frame.shape # 720,1280
         #x = background_height - self.h
@@ -76,7 +76,7 @@ class Heart:
         self.aw = aw
         self.ac = ac
 
-    # 기존 프레임에 뱃지를 붙이는 함수
+    # 기존 프레임에 하트를 붙이는 함수
     def add_heart(self, frame):
         
         background_height, background_width, _ = frame.shape # 720,1280
@@ -110,7 +110,7 @@ class Character:
         self.w = w
         self.c = c
 
-    # 기존 프레임에 뱃지를 붙이는 함수
+    # 기존 프레임에 아바타를 붙이는 함수
     def add_char(self, frame):
         
         background_height, background_width, _ = frame.shape # 720,1280

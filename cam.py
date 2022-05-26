@@ -10,11 +10,15 @@ from add_image import Character
 
 from face_Detect import face_detecter
 from gesture_Analyze import gesture_analyzer
+from multi_hand_Analyze import multi_hand_analyzer
 
 def run_camera():   
     hand_detect = False
-    GA = gesture_analyzer()
-    FD = face_detecter()
+    two_hand_detect = False
+    GA = gesture_analyzer() #제스처 인식
+    MHA = multi_hand_analyzer() #두손 제스처 인식
+    FD = face_detecter() #얼굴 감지
+    
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--camera", type=int, default=0, help="ID of webcam device (default: 0)")
@@ -67,7 +71,12 @@ def run_camera():
                 hand_detect = not hand_detect
             if hand_detect:
                 frame = GA.detect(frame)
-            
+
+            if keyboard.is_pressed('k'):
+                two_hand_detect = not two_hand_detect
+            if two_hand_detect:
+                frame, idx = MHA.detect(frame) #idx 6 = X, 7 = O
+                            
             #뱃지 그리기
             frame = badge.add_badge(frame)
             #아바타 그리기
