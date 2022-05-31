@@ -25,8 +25,8 @@ def get_timeTable(classId):
 
 
 @eel.expose
-def startClass(studentId, classId, accessToken):
-    classHandler = ClassHandle(studentId, classId, accessToken)
+def startClass(studentId, classId, accessToken, name):
+    classHandler = ClassHandle(studentId, classId, accessToken, name)
 
 
 eel.start('index.html')

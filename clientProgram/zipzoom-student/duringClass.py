@@ -17,12 +17,13 @@ from Quiz.quiz import QuizHandler
 
 from face_Detect import face_detecter
 from gesture_Analyze import gesture_analyzer
+from multi_hand_Analyze import multi_hand_analyzer
 
 from threading import Timer
 
 
 class ClassHandle:
-    def __init__(self, studentId, classId, accessToken):
+    def __init__(self, studentId, classId, accessToken, name):
         self.studentId = studentId
         self.classId = classId
         self.accessToken = accessToken
@@ -30,11 +31,13 @@ class ClassHandle:
         self.quizOn = False
 
         self.sio = socketio.Client()
+        # self.sio.connect('http://3.35.141.211:4040')
         self.sio.connect('http://localhost:4040')
         self.sio.emit('student_join_class', {
             'data': {
                 'studentId': studentId,
-                'classId': classId
+                'classId': classId,
+                'name': name
             }
         })
 
@@ -46,6 +49,7 @@ class ClassHandle:
 
         self.start_quiz = False
         self.showQuizResult = False
+        self.show_quiz_submit_msg = False
         self.quizAnswer = -1
         self.badgeQueue = []
 
@@ -66,34 +70,46 @@ class ClassHandle:
         print(data)
         self.quizOn = True
         self.quizText = data['data']['problem']
+        self.is_ox = True
 
     def choiceQuizHandler(self, data):
         print(data)
         self.quizOn = True
         self.quizText = data['data']['problem']
         self.multiChoices = data['data']['multiChoices']
+        self.is_ox = False
 
     def submitQuizHandler(self, quizAnswer):
-        self.sio.emit('submit_quiz', {
-            'data': {
-                'classId': self.classId,
-                'studentId': self.studentId,
-                'answer': quizAnswer
-            }
-        })
+        if quizAnswer == 'O' or quizAnswer == 'X':
+            self.sio.emit('submit_quiz', {
+                'data': {
+                    'classId': self.classId,
+                    'studentId': self.studentId,
+                    'answer': True if quizAnswer == 'O' else False
+                }
+            })
+        else:
+            self.sio.emit('submit_quiz', {
+                'data': {
+                    'classId': self.classId,
+                    'studentId': self.studentId,
+                    'answer': quizAnswer
+                }
+            })
 
     def quizTimeoutHandler(self, data):
         print(data)
         if 'studentAnswer' in data['data']:
-            studentAnswer = data['data']['studentAnswer']
             answer = data['data']['answer']
             is_correct = data['data']['is_correct']
+            is_ox = data['data']['is_ox']
 
             self.quizOn = False
 
-            self.quizHandler.set_quiz_result(studentAnswer, answer, is_correct)
+            self.quizHandler.set_quiz_result(answer, is_correct, is_ox)
 
             self.showQuizResult = True
+            self.show_quiz_submit_msg = False
 
             # 정답이면 뱃지 추가
             if is_correct:
@@ -104,9 +120,11 @@ class ClassHandle:
         else:
             answer = data['data']['answer']
             is_correct = data['data']['is_correct']
+            is_ox = data['data']['is_ox']
             self.quizOn = False
-            self.quizHandler.set_quiz_result('', answer, is_correct)
+            self.quizHandler.set_quiz_result(answer, is_correct, is_ox)
             self.showQuizResult = True
+            self.show_quiz_submit_msg = False
 
     def showQuizResultToggle(self):
         self.showQuizResult = False
@@ -116,12 +134,16 @@ class ClassHandle:
         self.run_camera()
 
     def startQuizToggle(self):
-        self.start_quiz = not self.start_quiz
+        self.start_quiz = False
+
+    def showQuizSubmitMsgToggle(self):
+        self.show_quiz_submit_msg = False
 
     def run_camera(self):
         hand_detect = False
         GA = gesture_analyzer()
         FD = face_detecter()
+        MHA = multi_hand_analyzer()  # 두손 제스처 인식
 
         parser = argparse.ArgumentParser()
         parser.add_argument("--camera", type=int, default=0,
@@ -153,9 +175,12 @@ class ClassHandle:
 
         fps_out = 30
 
-        # 이미지 틀 만들기
+        # 뱃지, 아바타 틀 만들기
         badge = Badge()
         avatar = Character(self.studentId, self.accessToken)
+
+        # 퀴즈 답 세팅
+        multi_idx = idx = -1
 
         with pyvirtualcam.Camera(width, height, fps_out, fmt=PixelFormat.BGR, print_fps=args.fps) as cam:
             print(
@@ -185,33 +210,46 @@ class ClassHandle:
                     startQuizSignOver.start()
 
                 if hand_detect:
-                    frame, idx = GA.detect(frame)
-
                     # 퀴즈 시작 표시
                     if self.start_quiz:
                         frame = self.quizHandler.start_quiz(frame)
-                        if self.multiChoices:
-                            self.quizHandler.set_quiz(
+                        if self.is_ox == False:
+                            self.quizHandler.set_multichoice_quiz(
                                 frame, self.quizText, self.multiChoices)
                         else:
-                            self.quizHandler.set_quiz(frame, self.quizText)
+                            self.quizHandler.set_ox_quiz(frame, self.quizText)
 
                     # 퀴즈 시작 표시 후 퀴즈 문제 공개
                     else:
                         frame = self.quizHandler.show_quiz(frame)
 
+                        if self.is_ox == False:
+                            frame, multi_idx = GA.detect(frame)
+                        else:
+                            frame, multi_idx = GA.detect(frame)
+                            frame, idx = MHA.detect(frame)  # idx 6 = X, 7 = O
+
                     # 답으로 예상되는 손 제스쳐 인식
-                    if 1 <= idx and idx <= 5:
-                        self.quizAnswer = idx
-                        frame = self.quizHandler.show_quiz_submit_msg(frame)
+                    if self.is_ox:
+                        if idx == 'O' or idx == 'X':
+                            self.quizAnswer = idx
+                    else:
+                        if (1 <= multi_idx and multi_idx <= 5):
+                            self.quizAnswer = multi_idx
 
                     # 답 표시를 했고 good 표시함
-                    if self.quizAnswer != -1 and idx == 6:
+                    if self.quizAnswer != -1 and multi_idx == 6:
                         self.quizOn = False
                         self.submitQuizHandler(self.quizAnswer)
                         self.quizAnswer = -1
 
-                if self.showQuizResult:
+                        self.show_quiz_submit_msg = True
+
+                if self.show_quiz_submit_msg:
+                    frame = self.quizHandler.show_quiz_submit_msg(frame)
+
+                elif self.showQuizResult:
+                    self.showQuizSubmitMsgToggle()
                     frame = self.quizHandler.show_quiz_result(frame)
                     showQuizResult = Timer(3.0, self.showQuizResultToggle)
                     showQuizResult.start()
