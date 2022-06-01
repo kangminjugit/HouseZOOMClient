@@ -1,17 +1,21 @@
+from asyncio.windows_events import NULL
 from email import header
 import eel
 import requests
 import socketio
-
-
-def quizTimeoutHandler(data):
-    print(data)
+from pymongo import MongoClient
 
 
 eel.init('web')
 
 sio = socketio.Client()
+# sio.connect('http://3.35.141.211:4040')
 sio.connect('http://localhost:4040')
+
+
+def quizTimeoutHandler(data):
+    print(data)
+
 
 sio.on('quiz_timeout', quizTimeoutHandler)
 
@@ -45,12 +49,14 @@ def get_studentTable(classId, accessToken):
 
 
 @eel.expose
-def startClass(teacherId, classId):
+def startClass(teacherId, accessToken, classId, name):
     print(teacherId, classId)
     sio.emit('teacher_join_class', {
         'data': {
             'teacherId': teacherId,
-            'classId': classId
+            'accessToken': accessToken,
+            'classId': classId,
+            'name': name
         }
     })
 
@@ -58,12 +64,13 @@ def startClass(teacherId, classId):
 
 
 @eel.expose
-def givePoint(accessToken, studentId, point):
+def givePoint(accessToken, studentId, point, classId):
     sio.emit('give_point', {
         'data': {
             'accessToken': accessToken,
             'studentId': studentId,
-            'point': point
+            'point': point,
+            'classId': classId
         }
     })
 
@@ -71,14 +78,15 @@ def givePoint(accessToken, studentId, point):
 
 
 @eel.expose
-def giveBadge(accessToken, studentId, point, subject, description):
+def giveBadge(accessToken, studentId, point, subject, description, classId):
     sio.emit('give_badge', {
         'data': {
             'accessToken': accessToken,
             'studentId': studentId,
             'point': point,
             'subject': subject,
-            'description': description
+            'description': description,
+            'classId': classId
         }
     })
 
@@ -86,7 +94,7 @@ def giveBadge(accessToken, studentId, point, subject, description):
 
 
 @eel.expose
-def giveOXQuiz(classId, teacherID, accessToken, problem, answer, timeLimitMin, timeLimitSec, point):
+def giveOXQuiz(classId, teacherID, accessToken, problem, answer, timeLimitMin, timeLimitSec, point, badgeSubject, badgeDescription):
     sio.emit('give_ox_quiz', {
         'data': {
             'classId': classId,
@@ -96,7 +104,9 @@ def giveOXQuiz(classId, teacherID, accessToken, problem, answer, timeLimitMin, t
             'answer': answer,
             'timeLimitMin': timeLimitMin,
             'timeLimitSec': timeLimitSec,
-            'point': point
+            'point': point,
+            'badgeSubject': badgeSubject,
+            'badgeDescription': badgeDescription
         }
     })
 
@@ -104,7 +114,7 @@ def giveOXQuiz(classId, teacherID, accessToken, problem, answer, timeLimitMin, t
 
 
 @eel.expose
-def giveChoiceQuiz(classId, teacherID, accessToken, problem, multiChoices, answer, timeLimitMin, timeLimitSec, point):
+def giveChoiceQuiz(classId, teacherID, accessToken, problem, multiChoices, answer, timeLimitMin, timeLimitSec, point, badgeSubject, badgeDescription):
     sio.emit('give_choice_quiz', {
         'data': {
             'classId': classId,
@@ -115,7 +125,9 @@ def giveChoiceQuiz(classId, teacherID, accessToken, problem, multiChoices, answe
             'answer': answer,
             'timeLimitMin': timeLimitMin,
             'timeLimitSec': timeLimitSec,
-            'point': point
+            'point': point,
+            'badgeSubject': badgeSubject,
+            'badgeDescription': badgeDescription
         }
     })
 
@@ -128,6 +140,25 @@ def get_classList(accessToken):
     response = requests.get(
         'http://3.35.141.211:3000/api/class/my-class', headers=headers)
     return response.json()
+
+
+@eel.expose
+def get_quizResult(classId):
+    mongo = MongoClient(
+        'mongodb://ec2-3-38-116-33.ap-northeast-2.compute.amazonaws.com', 27017)
+    print(mongo)
+
+    filter = {'classId': classId}
+    result = mongo['housezoom']['room'].find_one(filter)
+
+    if result:
+        studentAnswerArr = result['studentAnswerArr']
+        quizArr = result['quizArr']
+
+        # print(result)
+        return (quizArr, studentAnswerArr)
+    else:
+        return NULL
 
 
 eel.start('index.html', port=8090)
