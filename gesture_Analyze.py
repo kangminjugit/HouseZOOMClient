@@ -36,6 +36,8 @@ class gesture_analyzer:
         #프레임을 좌우전환 후 RGB로 변환
         img = cv2.flip(img, 1)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        
+        idx = -1
 
         result = self.hands.process(img)
 
@@ -79,5 +81,5 @@ class gesture_analyzer:
             #img = cv2.flip(img, 1) 
         
         img = cv2.flip(img, 1)         
-        return(img)
+        return(img,idx)
             

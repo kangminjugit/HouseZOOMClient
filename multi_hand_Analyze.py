@@ -25,6 +25,7 @@ class multi_hand_analyzer:
         self.knn.train(self.angle, cv2.ml.ROW_SAMPLE, self.label)
                    
     def detect(self,img): 
+        idx = -1
         
         #프레임을 좌우전환 후 RGB로 변환
         img = cv2.flip(img, 1)
