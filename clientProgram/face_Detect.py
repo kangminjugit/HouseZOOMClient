@@ -35,6 +35,7 @@ class face_detecter:
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5, min_tracking_confidence=0.5)
         self.bomb = Bomb()
+        self.alarm = Alarm()
 
     def detect(self, image):
         image = cv2.flip(image, 1)
@@ -62,7 +63,7 @@ class face_detecter:
                     self.TIMER_FLAG = True
                 self.COUNTER += 1
 
-                if self.COUNTER >= 150:
+                if self.COUNTER >= 200:
                     image = self.draw_bomb(image)
                     mid_closing = timeit.default_timer()
                     closing_time = round((mid_closing-self.start_closing), 3)
@@ -75,15 +76,17 @@ class face_detecter:
                             self.PREV_TERM = CUR_TERM
                             self.RUNNING_TIME = 1.75
 
-                        self.RUNNING_TIME += 5
+                        self.alarm.sound_alarm() 
+                               
+                        self.RUNNING_TIME += 40
                         self.ALARM_FLAG = True
                         self.ALARM_COUNT += 1
-
-                        self.sound_alarm()
 
                 #cv2.putText(image, 'Blink', (200, 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
 
             else:
+                self.alarm.alarm_Off()
+                
                 self.COUNTER = 0
                 self.TIMER_FLAG = False
                 self.RUNNING_TIME = 0
@@ -114,12 +117,7 @@ class face_detecter:
         image = cv2.flip(image, 1)
         image = self.bomb.add_bomb(image)
         image = cv2.flip(image, 1)
-        return image
-
-    def sound_alarm(self):
-        pygame.mixer.init()
-        pygame.mixer.music.load('knock.MP3')
-        pygame.mixer.music.play()
+        return image 
 
     def landmarksDetection(self, img, results, draw=False):
         img_height, img_width = img.shape[:2]
@@ -167,3 +165,15 @@ class face_detecter:
         leRatio = lhDistance/(lvDistance+0.1)
         ratio = (reRatio+leRatio)/2
         return ratio
+    
+class Alarm:
+    def __init__(self):
+        pygame.mixer.init()
+        pygame.mixer.music.load('timer.MP3')
+
+    def sound_alarm(self) :
+        pygame.mixer.music.play()
+            
+    def alarm_Off(self):
+        pygame.mixer.music.stop() 
+        pygame.mixer.music.rewind()  
