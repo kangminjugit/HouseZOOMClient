@@ -19,6 +19,7 @@ class face_detecter:
         self.RUNNING_TIME = 0
         self.PREV_TERM = 0 #Variable to measure the time eyes were being opened until the alarm rang.
 
+        self.sleep = False
         
         # Left eyes indices 
         self.LEFT_EYE =[ 362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386, 385,384, 398 ]
@@ -31,7 +32,7 @@ class face_detecter:
         self.bomb = Bomb()
         self.alarm = Alarm()
     
-    def detect(self,image):
+    def detect(self,image,wake):
         image = cv2.flip(image, 1)
         # To improve performance, optionally mark the image as not writeable to
         # pass by reference.
@@ -57,6 +58,7 @@ class face_detecter:
                 self.COUNTER += 1
 
                 if self.COUNTER >= 200:
+                    self.sleep = True
                     image = self.draw_bomb(image)
                     mid_closing = timeit.default_timer()
                     closing_time = round((mid_closing-self.start_closing),3)
@@ -76,8 +78,12 @@ class face_detecter:
 
                 #cv2.putText(image, 'Blink', (200, 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
             
-            else:
+            elif (ratio <= 5.5) and (not wake) and (self.sleep): #눈을 뜨고 있지만 그 전까지 자고 있었고 손바닥을 보여주지 않음
+                image = self.draw_bomb(image)
+            
+            elif (ratio <= 5.5) and (wake): #눈도 뜨고 있고 손바닥을 보였을 때
                 self.alarm.alarm_Off()
+                self.sleep = False
                 self.COUNTER = 0
                 self.TIMER_FLAG = False
                 self.RUNNING_TIME = 0
@@ -103,7 +109,7 @@ class face_detecter:
             image = cv2.flip(image, 1)  
             
         image = cv2.flip(image, 1)          
-        return(image)
+        return(image,self.sleep)
     
     def draw_bomb(self,image):
         image = cv2.flip(image, 1)  

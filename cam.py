@@ -15,6 +15,7 @@ from multi_hand_Analyze import multi_hand_analyzer
 def run_camera():   
     hand_detect = False
     two_hand_detect = False
+    wake = False
     GA = gesture_analyzer() #제스처 인식
     MHA = multi_hand_analyzer() #두손 제스처 인식
     FD = face_detecter() #얼굴 감지
@@ -64,13 +65,20 @@ def run_camera():
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
             # 얼굴 눈 찾기    
-            frame = FD.detect(frame)
+            frame, sleep = FD.detect(frame,wake)
+            
+            if sleep:
+                frame, idx = GA.detect(frame)
+                if idx == 5:
+                    wake = True
+            else:
+                wake = False        
             
             # 제스처 분석 (h 누르면 제스처 분석 시작)
             if keyboard.is_pressed('h'):
                 hand_detect = not hand_detect
             if hand_detect:
-                frame = GA.detect(frame)
+                frame, idx = GA.detect(frame)
 
             if keyboard.is_pressed('k'):
                 two_hand_detect = not two_hand_detect
