@@ -22,6 +22,8 @@ class face_detecter:
         self.RUNNING_TIME = 0
         # Variable to measure the time eyes were being opened until the alarm rang.
         self.PREV_TERM = 0
+        
+        self.sleep = False
 
         # Left eyes indices
         self.LEFT_EYE = [362, 382, 381, 380, 374, 373, 390,
@@ -35,8 +37,9 @@ class face_detecter:
         self.face_mesh = self.mp_face_mesh.FaceMesh(
             max_num_faces=1, refine_landmarks=True, min_detection_confidence=0.5, min_tracking_confidence=0.5)
         self.bomb = Bomb()
+        self.alarm = Alarm()
 
-    def detect(self, image):
+    def detect(self, image, wake):
         image = cv2.flip(image, 1)
         # To improve performance, optionally mark the image as not writeable to
         # pass by reference.
@@ -62,7 +65,8 @@ class face_detecter:
                     self.TIMER_FLAG = True
                 self.COUNTER += 1
 
-                if self.COUNTER >= 150:
+                if self.COUNTER >= 200:
+                    self.sleep = True
                     image = self.draw_bomb(image)
                     mid_closing = timeit.default_timer()
                     closing_time = round((mid_closing-self.start_closing), 3)
@@ -75,15 +79,21 @@ class face_detecter:
                             self.PREV_TERM = CUR_TERM
                             self.RUNNING_TIME = 1.75
 
-                        self.RUNNING_TIME += 5
+                        self.alarm.sound_alarm() 
+                               
+                        self.RUNNING_TIME += 40
                         self.ALARM_FLAG = True
                         self.ALARM_COUNT += 1
 
-                        self.sound_alarm()
-
                 #cv2.putText(image, 'Blink', (200, 50), fontFace=cv2.FONT_HERSHEY_SIMPLEX, fontScale=1, color=(255, 255, 255), thickness=2)
-
-            else:
+            
+            elif (ratio <= 5.5) and (not wake) and (self.sleep): #눈을 뜨고 있지만 그 전까지 자고 있었고 손바닥을 보여주지 않음
+                image = self.draw_bomb(image)
+            
+            elif (ratio <= 5.5) and (wake): #눈도 뜨고 있고 손바닥을 보임
+                self.alarm.alarm_Off()
+                
+                self.sleep = False
                 self.COUNTER = 0
                 self.TIMER_FLAG = False
                 self.RUNNING_TIME = 0
@@ -102,24 +112,19 @@ class face_detecter:
             """
 
         else:
-            # 뱃지 그리기
+            # 폭탄 그리기
             image = cv2.flip(image, 1)
             image = self.bomb.add_bomb(image)
             image = cv2.flip(image, 1)
 
         image = cv2.flip(image, 1)
-        return(image)
+        return(image, self.sleep)
 
     def draw_bomb(self, image):
         image = cv2.flip(image, 1)
         image = self.bomb.add_bomb(image)
         image = cv2.flip(image, 1)
-        return image
-
-    def sound_alarm(self):
-        pygame.mixer.init()
-        pygame.mixer.music.load('knock.MP3')
-        pygame.mixer.music.play()
+        return image 
 
     def landmarksDetection(self, img, results, draw=False):
         img_height, img_width = img.shape[:2]
@@ -167,3 +172,15 @@ class face_detecter:
         leRatio = lhDistance/(lvDistance+0.1)
         ratio = (reRatio+leRatio)/2
         return ratio
+    
+class Alarm:
+    def __init__(self):
+        pygame.mixer.init()
+        pygame.mixer.music.load('timer.MP3')
+
+    def sound_alarm(self) :
+        pygame.mixer.music.play()
+            
+    def alarm_Off(self):
+        pygame.mixer.music.stop() 
+        pygame.mixer.music.rewind()  
